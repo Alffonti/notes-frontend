@@ -2,7 +2,7 @@
 
 This project aims to create the frontend of a **Notes application** using the React framework.
 
-The frontend of the application was created with the `npx create-react-app notes` command which can be used once Node.js is installed on the computer. It runs on **port 3000** in the **development environment**.
+The frontend of the application was created with the `npx create-react-app notes` command which can be used once Node.js is installed on the computer. It runs on **port 3000** in **development environment**.
 
 The notes are generated using the map function. A key attribute (cotaining the note id) was defined for the **Note component** placed in the `src/components` directory.
 
@@ -36,10 +36,36 @@ The `index.css` file under the `src` directory was added and imported in the `in
 
 ## Testing server functionality
 
-The JSON server package was installed to test the server functionality in the development environment wihtout developing the backend yet.
+The JSON server package was installed to test the server functionality in development environment wihtout developing the backend yet.
 
 The following script was added to the `package.json` in order to run the server on **port 3001** and watch for the db.json file in the root directory (which contains the notes data object).
 
 ```json
 json-server --port 3001 --watch db.json
 ```
+
+## Proxy
+
+Due to changing the backend address to a relative URL in `src/services/note.js`:
+```
+const baseUrl = '/api/notes'
+```
+the connection to the backend (HTTP requests) do not work in development mode as they go to the wrong address localhost:3000/api/notes.
+
+The following declaration was addedto the package.json file to solve this issue.
+
+```json
+{
+  "dependencies": {
+    // ...
+  },
+  "scripts": {
+    // ...
+  },
+  "proxy": "http://localhost:3001"
+}
+```
+
+## Resources
+
+- [Proxying API Requests in Development](https://create-react-app.dev/docs/proxying-api-requests-in-development/)
