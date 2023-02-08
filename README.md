@@ -66,6 +66,194 @@ The following declaration was addedto the package.json file to solve this issue.
 }
 ```
 
+## Login
+
+The token returned with a successful login is saved to the application's state `user`.
+
+The user's login information is saved in the browser's local storage keeping it persistent even when the page is re-rendered.
+
+An effect hook was used to check if user details of a logged-in user can already be found on the local storage.
+
+A conditional rendering of the login form was implemented so that it is visible only if a user is not logged-in. On the other hand, the name of the user and a list of blogs is shown if a user is logged-in.
+
+The token stored in the the application's state `user` is set in a `token` variable in the `./src/services/notes.js˚` file so that it can be used when making HTTP POST requests.
+
+```javascript
+let token = null
+
+const setToken = newToken => {
+  token = `bearer ${newToken}`
+}
+```
+
+## Creating a new note
+
+Logged-in user are allowed to add new notes using the `token` set using the setToken() helper function from the `./src/services/blogs.js˚` file.
+
+The HTTP Authorization request header (containing the user access token) is declared in the `config` variable which is passed as a third argument when making a POST request.
+
+```javascript
+const create = newObject => {
+  const config = {
+    headers: { Authorization: token },
+  }
+
+  const request = axios.post(baseUrl, newObject, config)
+  return request.then(response => response.data)
+}
+```
+
+## Toggleable
+
+The `Togglable` component was created to add the visibility toggling functionality on both the login and note's creation form.
+
+`props.children` is used to render the elements defined between the opening and closing tags of the component.
+
+```javascript
+<Toggleable buttonLabel="new note">
+  <NoteForm createNote={addNote} />
+</Toggleable>
+```
+
+## Hiding the note form after creating a note
+
+The `useRef` hook was used to reference the note form so that it can be hidden by the parent component (the `addNote` function is defined in the App component).
+
+```javascript
+const noteFormRef = useRef()
+```
+
+The `noteFormRef` reference is assigned to the instance of the Toogleable component using the `ref` attribute.
+
+```
+<Toggleable buttonLabel="new note" ref={noteFormRef}>
+  //
+</Toggleable>
+```
+
+The `Toggleable` component is wrapped within the `forwardRef` function in order to access the instance of Toogleable component referenced by the `noteFormRef` reference.
+
+```javascript
+export default forwardRef(Toggleable)
+```
+
+The `useImperativeHandle` hook is used to expose and invoke the `toggleVisibility` function outside of the `Toggleable` component.
+
+```javascript
+useImperativeHandle(refs, () => {
+  return {
+    toggleVisibility,
+  }
+})
+```
+
+The `toggleVisibility` function can be called using the `noteFormRef.current.toggleVisibility()` method.
+
+```javascript
+const addNote = (noteObject) => {
+    noteFormRef.current.toggleVisibility()
+    //
+}
+```
+
+## PropTypes
+
+The `prop-types` library was installed in order to validate the types of properties passed to components. When an invalid value is provided for a prop, a warning will be shown in the JavaScript console. For performance reasons, propTypes is only checked in development mode.
+
+## ESlint
+
+Eslint is installed by default to applications created with `create-react-app`.
+
+Base configuration file is extendend by adding the following ESlint configuration in `package.json`.
+
+```json
+"eslintConfig": {
+  "extends": [
+    "react-app",
+    "react-app/jest"
+  ]
+}
+```
+
+A `.eslintrc.js` file was created in order to override the default ESlint configuration with my desired configuration.
+
+The `eslint-plugin-jest` package was installed in order to avoid undesired and irrelevant linter errors while testing the frontend.
+
+The `.eslintignore` file was created in order to skip the `build` and `node_modules` directories when linting.
+
+## React Testing Library
+
+The `react-testing-library` was installed in order to test React components by simulating the ways that users interact with DOM nodes.
+
+Jest is installed by default to applications created with `create-react-app`.
+
+The `jest-dom` was installed in order to provide a set of custom jest matchers to write tests that assert various things about the state of a DOM.
+
+Unit test files are located in the same directory as the component being tested.
+
+Tests are run in `watch` mode with the `npm test` command by default in applications created with `create-react-app`.
+
+Components are rendered in a format that is suitable for testting using the `render` function provided by the react-testing-library:
+
+```javascript
+render(<Blog/>)
+```
+
+A rendered component can be accessed using the `screen` object.
+
+The `getByText` method is used to find non-interactive elements (like divs, spans, and paragraphs) with the text content passed as argument.
+
+```javascript
+const element = screen.getByText('React patterns by Michael Chan')
+```
+
+The render function return a `container` object as one of its properties which can be used to query for rendered elements using the `querySelector` method.
+
+```javascript
+const { container } = render(<Note note={note} />)
+const div = container.querySelector('.note')
+```
+
+The `user-event` library was installed in order to simulate **user interactions** by dispatching the **events** that would happen if the interaction took place in a browser.
+
+**Mock functions** were used in order to replace dependencies (event handlers, etc) of the components being tested. Mocks make it possible to return hardcoded responses, and to verify the number of times the mock functions are called and with what parameters.
+
+```javascript
+const mockHandler = jest.fn()
+```
+
+The `userEvent.setup()` is used to start a session which mocks the UI layer to simulate **user interactions** like they would happen in the browser.
+
+```
+const user = userEvent.setup()
+```
+
+A test coverage can be generated with the following command:
+
+```javascript
+CI=true npm test -- --coverage
+```
+
+## End to end testing
+
+The **Cypress** library was installed to test the web application as a whole.
+
+```shell
+npm install --save-dev cypress
+```
+
 ## Resources
 
 - [Proxying API Requests in Development](https://create-react-app.dev/docs/proxying-api-requests-in-development/)
+
+- [Conditional rendering](https://reactjs.org/docs/conditional-rendering.html#inline-if-with-logical--operator)
+
+- [Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Storage)
+
+- [How to send the authorization header using Axios](https://flaviocopes.com/axios-send-authorization-header/)
+
+-[useRef](https://beta.reactjs.org/reference/react/useRef)
+
+-[forwardRef](https://beta.reactjs.org/reference/react/forwardRef)
+
+-[useImperativeHandle](https://beta.reactjs.org/reference/react/useImperativeHandle)
