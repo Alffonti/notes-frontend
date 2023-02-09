@@ -47,7 +47,7 @@ const App = () => {
       setUsername('')
       setPassword('')
     } catch (exception) {
-      setErrorMessage('Wrong Credentials')
+      setErrorMessage('Wrong credentials')
       setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
@@ -70,7 +70,7 @@ const App = () => {
       .then(returnedNote => {
         setNotes(notes.map(note => (note.id !== id ? note : returnedNote)))
       })
-      .catch(error => {
+      .catch(() => {
         setErrorMessage(
           `The note '${note.content}' was already deleted from our server`
         )
@@ -103,9 +103,12 @@ const App = () => {
       )}
 
       {user && (
-        <Toggleable buttonLabel="new note" ref={noteFormRef}>
-          <NoteForm createNote={addNote} />
-        </Toggleable>
+        <div>
+          <p>{user.name} logged in</p>
+          <Toggleable buttonLabel="new note" ref={noteFormRef}>
+            <NoteForm createNote={addNote} />
+          </Toggleable>
+        </div>
       )}
 
       <div>

@@ -207,6 +207,8 @@ The `getByText` method is used to find non-interactive elements (like divs, span
 const element = screen.getByText('React patterns by Michael Chan')
 ```
 
+An `aria-label` was added to the input element in the `NoteForm` component in order to get the rendered element by using the `getByLabelText` method which is more accessible than using the `getByPlaceholderText` or `getByText` methods.
+
 The render function return a `container` object as one of its properties which can be used to query for rendered elements using the `querySelector` method.
 
 ```javascript
@@ -236,10 +238,144 @@ CI=true npm test -- --coverage
 
 ## End to end testing
 
-The **Cypress** library was installed to test the web application as a whole.
+The **Cypress** library was installed as a development dependency in order to test the web application as a whole.
 
 ```shell
 npm install --save-dev cypress
+```
+and by adding an npm-script to run it:
+
+```json
+{
+  // ...
+  "scripts": {
+    //
+    "cypress:open": "cypress open"
+  },
+  // ...
+}
+```
+
+The tests require the tested system to be running. An npm script was added to the **backend** application in order to start it in test mode as Cypress tests do not start the system when they are run.
+
+```json
+{
+  // ...
+  "scripts": {
+    //
+    "start:test": "NODE_ENV=test node index.js"
+  },
+  // ...
+}
+```
+
+When both the backend and frontend are running, Cypress can be started with the command:
+
+```shell
+npm run cypress:open
+```
+
+After selecting E2E testing and the Chrome browser, a new spec `./cypress/e2e/note-app.cy.js` was created.
+
+The tests are run by clicking the test in the Cypress.
+
+`Describe` blocks are used to group different test cases. Each test case can be defined with the `it` method.
+
+Mocha (which is used by Cypress under the hood) recommends that arrow functions are not used, because they might cause some issues in certain situations.
+
+The `eslint-plugin-cypress` plugin was installed as a development dependency in order to extend the ESling configuration with recommended Cypress rules. Cypress global variables were added to the project.
+
+```js
+module.exports = {
+    "env": {
+        // ...
+        "cypress/globals": true
+    },
+    // ...
+    "plugins": [
+        "react", "jest", "cypress"
+    ],
+    // ...
+}
+```
+
+All changes to the browser's state are reversed after each test. So, each test need to be started from zero.
+
+A `testing` API endpoint was created in the backend application in order to **reset** the server's database before every test is run. The database can be emptied (only in test mode) by making an HTTP POST request to the `/api/testing/reset` endpoint.
+
+```javascript
+if (process.env.NODE_ENV === 'test') {
+  const testingRouter = require('./controllers/testing')
+  app.use('/api/testing', testingRouter)
+}
+```
+
+The database is initialized with one user and no notes before each test.
+
+```javascript
+describe('Note app', function () {
+  beforeEach(function () {
+    cy.request('POST', 'http://localhost:3001/api/testing/reset')
+    const user = {
+      name: 'Matti Luukkainen',
+      username: 'mluukkai',
+      password: 'salainen',
+    }
+    cy.request('POST', 'http://localhost:3001/api/users/', user)
+    cy.visit('http://localhost:3000')
+  })
+```
+
+Cypress will run all tests each time by default, and as the number of tests increases, it starts to become quite time-consuming.
+
+When developing a new test or when debugging a broken test, we can define the
+
+Tests were defined with the `it.only` method when developing a new test or when debugging a broken test in order to only run the required test. Once the test is working, the `.only` was removed.
+
+The `and` method was used in order to chain asssertions on the same element.
+
+The `should` syntax was used to create assertions by chaining it after the `get` command.
+
+Custom commands (`login` and `createNote`) were created in the `cypress/support/command.js` file in order to **reuse** the test code. As the functionality of the `login` and `createNote` codes were already tested, the custom command can directly make HTTP requests instead of interacting with the browser in order to improve performance.
+
+```javascript
+Cypress.Commands.add('login', ({ username, password }) => {
+  cy.request('POST', 'http://localhost:3001/api/login', {
+    username,
+    password,
+  }).then(({ body }) => {
+    localStorage.setItem('loggedNoteappUser', JSON.stringify(body))
+    cy.visit('http://localhost:3000')
+  })
+})
+```
+
+The [baseUrl](https://docs.cypress.io/guides/references/best-practices#Setting-a-global-baseUrl) and `BACKEND` environment variables were defined in the `cypress.config.js` configuration file in order to point to the domain under test (origin), and to the backend (server).
+
+```javascript
+module.exports = defineConfig({
+  e2e: {
+    setupNodeEvents(on, config) {},
+    baseUrl: 'http://localhost:3000',
+  },
+  env: { BACKEND: 'http://localhost:3001/api' },
+})
+```
+
+The `as` command was used in order to alias a DOM element and then using `cy.get()` to access the aliased element.
+
+```javascript
+cy.contains('second note').parent().find('button').as('theButton')
+cy.get('@theButton').click()
+```
+
+The following script was added in order to run tests from the command line.
+
+```json
+"scripts": {
+    // ...
+    "test:e2e": "cypress run"
+  }
 ```
 
 ## Resources
@@ -252,8 +388,10 @@ npm install --save-dev cypress
 
 - [How to send the authorization header using Axios](https://flaviocopes.com/axios-send-authorization-header/)
 
--[useRef](https://beta.reactjs.org/reference/react/useRef)
+- [useRef](https://beta.reactjs.org/reference/react/useRef)
 
--[forwardRef](https://beta.reactjs.org/reference/react/forwardRef)
+- [forwardRef](https://beta.reactjs.org/reference/react/forwardRef)
 
--[useImperativeHandle](https://beta.reactjs.org/reference/react/useImperativeHandle)
+- [useImperativeHandle](https://beta.reactjs.org/reference/react/useImperativeHandle)
+
+- [Cypress Guides](https://docs.cypress.io/guides/overview/why-cypress)
